@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unused Medicine Donation System</title>
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { margin: 0; background: #f4f6f8; }
+    header { background: #2e7d32; color: white; padding: 20px; text-align: center; }
+    nav { display: flex; justify-content: center; gap: 15px; background: #1b5e20; padding: 10px; flex-wrap: wrap; }
+    nav button { background: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    nav button:hover { background: #c8e6c9; }
+    section { display: none; padding: 20px; max-width: 900px; margin: auto; }
+    section.active { display: block; }
+    .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    input, select { width: 100%; padding: 10px; margin: 8px 0 15px; border-radius: 5px; border: 1px solid #ccc; }
+    button.submit { background: #2e7d32; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; }
+    button.submit:hover { background: #1b5e20; }
+    footer { text-align: center; padding: 15px; background: #e0e0e0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Unused Medicine Donation System</h1>
+  <p>Donate or request medicines easily</p>
+</header>
+
+<nav id="navBar">
+  <button onclick="showSection('login')">Login</button>
+  <button onclick="showSection('signup')">Sign Up</button>
+</nav>
+
+<section id="login" class="active">
+  <div class="card">
+    <h2>Login</h2>
+    <input id="loginEmail" placeholder="Email" />
+    <input id="loginPass" type="password" placeholder="Password" />
+    <button class="submit" onclick="login()">Login</button>
+  </div>
+</section>
+
+<section id="signup">
+  <div class="card">
+    <h2>Sign Up</h2>
+    <input id="signName" placeholder="Name" />
+    <input id="signEmail" placeholder="Email" />
+    <input id="signPass" type="password" placeholder="Password" />
+    <select id="signRole">
+      <option value="donor">Donor</option>
+      <option value="receiver">Receiver</option>
+    </select>
+    <button class="submit" onclick="signup()">Create Account</button>
+  </div>
+</section>
+
+<section id="home">
+  <div class="card"><h2>Welcome</h2><p>You are logged in.</p></div>
+</section>
+
+<section id="donate">
+  <div class="card">
+    <h2>Donate Medicine</h2>
+    <input id="medName" placeholder="Medicine Name" />
+    <input id="quantity" type="number" placeholder="Quantity" />
+    <input id="expiry" type="date" />
+    <button class="submit" onclick="donateMedicine()">Donate</button>
+  </div>
+</section>
+
+<section id="available">
+  <div class="card">
+    <h2>Available Medicines</h2>
+    <div id="medicineList"></div>
+  </div>
+</section>
+
+<section id="requests">
+  <div class="card">
+    <h2>Request Medicine</h2>
+    <input id="reqName" placeholder="Medicine Needed" />
+    <input id="reqQty" type="number" placeholder="Quantity" />
+    <button class="submit" onclick="requestMedicine()">Request</button>
+    <h3>My Requests</h3>
+    <div id="requestList"></div>
+  </div>
+</section>
+
+<footer>© 2026 Medicine Donation System</footer>
+
+<script>
+let currentUser = null;
+
+function showSection(id) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='available') loadMedicines();
+  if(id==='requests') loadRequests();
+}
+
+function signup() {
+  let users = JSON.parse(localStorage.getItem('users')) || [];
+  users.push({
+    name: signName.value,
+    email: signEmail.value,
+    pass: signPass.value,
+    role: signRole.value
+  });
+  localStorage.setItem('users', JSON.stringify(users));
+  alert('Signup successful');
+  showSection('login');
+}
+
+function login() {
+  let users = JSON.parse(localStorage.getItem('users')) || [];
+  let user = users.find(u => u.email===loginEmail.value && u.pass===loginPass.value);
+  if(!user) return alert('Invalid credentials');
+  currentUser = user;
+  setupNav();
+  showSection('home');
+}
+
+function setupNav() {
+  navBar.innerHTML = `
+    <button onclick="showSection('home')">Home</button>
+    ${currentUser.role==='donor' ? '<button onclick="showSection(\'donate\')">Donate</button>' : ''}
+    <button onclick="showSection('available')">Medicines</button>
+    ${currentUser.role==='receiver' ? '<button onclick="showSection(\'requests\')">Request</button>' : ''}
+    <button onclick="location.reload()">Logout</button>`;
+}
+
+function donateMedicine() {
+  let meds = JSON.parse(localStorage.getItem('medicines')) || [];
+  meds.push({ name: medName.value, qty: quantity.value, expiry: expiry.value });
+  localStorage.setItem('medicines', JSON.stringify(meds));
+  alert('Medicine donated');
+}
+
+function loadMedicines() {
+  let meds = JSON.parse(localStorage.getItem('medicines')) || [];
+  medicineList.innerHTML = meds.map(m=>`<div class='card'><b>${m.name}</b> | Qty: ${m.qty} | Exp: ${m.expiry}</div>`).join('');
+}
+
+function requestMedicine() {
+  let reqs = JSON.parse(localStorage.getItem('requests')) || [];
+  reqs.push({ user: currentUser.email, name: reqName.value, qty: reqQty.value });
+  localStorage.setItem('requests', JSON.stringify(reqs));
+  alert('Request submitted');
+  loadRequests();
+}
+
+function loadRequests() {
+  let reqs = JSON.parse(localStorage.getItem('requests')) || [];
+  requestList.innerHTML = reqs.filter(r=>r.user===currentUser.email)
+    .map(r=>`<div class='card'>${r.name} - Qty ${r.qty}</div>`).join('');
+}
+</script>
+
+</body>
+</html>
